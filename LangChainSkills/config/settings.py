@@ -44,6 +44,12 @@ class SkillSystemConfig:
     auto_discover: bool = True
     skill_module_name: str = "skill"  # 默认是skills目录下的skill.py
 
+    # API 服务配置
+    host: str = "0.0.0.0"
+    port: int = 8000
+    metrics_port: int = 9090
+    static_dir: str = "./static"
+
     # 自定义配置
     custom_config: Dict[str, Any] = field(default_factory=dict)
 
@@ -74,6 +80,10 @@ class SkillSystemConfig:
             "middleware_enabled": self.middleware_enabled,
             "auto_discover": self.auto_discover,
             "skill_module_name": self.skill_module_name,
+            "host": self.host,
+            "port": self.port,
+            "metrics_port": self.metrics_port,
+            "static_dir": self.static_dir,
             "custom_config": self.custom_config,
         }
 

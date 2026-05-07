@@ -8,7 +8,7 @@
 
 import os
 import json
-from typing import Any, List, Optional, Dict
+from typing import Any, List, Optional, Dict, Sequence
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
@@ -24,9 +24,9 @@ from langchain_core.tools import BaseTool
 from pydantic import Field
 
 try:
-    from openai import OpenAI
+    from openai import OpenAI as OpenAIClient
 except ImportError:
-    OpenAI = None
+    OpenAIClient = None
 
 
 class DeepSeekReasonerChatModel(BaseChatModel):
@@ -60,12 +60,12 @@ class DeepSeekReasonerChatModel(BaseChatModel):
     bound_tools: Optional[List[Dict]] = Field(default=None)
 
     # OpenAI 客户端（不序列化）
-    _client: Optional[Any] = None
+    _client: Optional["OpenAIClient"] = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        if OpenAI is None:
+        if OpenAIClient is None:
             raise ImportError(
                 "需要安装 openai 库。请运行: pip install openai"
             )
@@ -79,7 +79,7 @@ class DeepSeekReasonerChatModel(BaseChatModel):
                 "需要提供 api_key 或设置 DEEPSEEK_API_KEY 环境变量"
             )
 
-        self._client = OpenAI(
+        self._client = OpenAIClient(
             api_key=self.api_key,
             base_url=self.base_url,
             timeout=self.timeout

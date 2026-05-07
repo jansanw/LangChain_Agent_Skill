@@ -52,6 +52,22 @@ class SkillMiddleware(AgentMiddleware):
         self.verbose = verbose
         self.filter_fn = filter_fn
 
+    def _get_skills_loaded(self, state: Any) -> List[str]:
+        """
+        统一的技能状态获取方法
+
+        Args:
+            state: 请求状态对象
+
+        Returns:
+            已加载的 Skill 名称列表
+        """
+        if state is None:
+            return []
+        if isinstance(state, dict):
+            return state.get("skills_loaded", [])
+        return getattr(state, "skills_loaded", [])
+
     def _get_filtered_tools(self, skills_loaded: List[str]) -> List[BaseTool]:
         """
         获取过滤后的工具列表
@@ -83,14 +99,8 @@ class SkillMiddleware(AgentMiddleware):
             模型响应
         """
         # 从状态中获取已加载的 Skills
-        # AgentState 是 TypedDict (基于 dict)，使用字典方式访问
-        skills_loaded = []
-        if hasattr(request, 'state') and request.state is not None:
-            # 优先使用字典访问方式
-            if isinstance(request.state, dict):
-                skills_loaded = request.state.get("skills_loaded", [])
-            else:
-                skills_loaded = getattr(request.state, "skills_loaded", [])
+        state = getattr(request, 'state', None)
+        skills_loaded = self._get_skills_loaded(state)
 
         # 获取过滤后的工具
         relevant_tools = self._get_filtered_tools(skills_loaded)
@@ -119,13 +129,9 @@ class SkillMiddleware(AgentMiddleware):
 
         LangChain 可能使用异步调用，所以需要同时实现
         """
-        # 从状态中获取已加载的 Skills (字典方式访问)
-        skills_loaded = []
-        if hasattr(request, 'state') and request.state is not None:
-            if isinstance(request.state, dict):
-                skills_loaded = request.state.get("skills_loaded", [])
-            else:
-                skills_loaded = getattr(request.state, "skills_loaded", [])
+        # 从状态中获取已加载的 Skills
+        state = getattr(request, 'state', None)
+        skills_loaded = self._get_skills_loaded(state)
 
         # 获取过滤后的工具
         relevant_tools = self._get_filtered_tools(skills_loaded)

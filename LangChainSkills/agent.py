@@ -1,36 +1,46 @@
 import os
 from typing import List
+from pathlib import Path
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import AgentMiddleware
+from dotenv import load_dotenv
+from langchain_deepseek import ChatDeepSeek
 
 from core import SkillRegistry, SkillState, SkillMetadata
 from core.state import SkillStateAccumulative, SkillStateFIFO
 from middleware import SkillMiddleware
 from config import SkillSystemConfig, load_config
-from pathlib import Path
-from dotenv import load_dotenv
-from langchain_deepseek import ChatDeepSeek
 from models import DeepSeekReasonerChatModel
 
 
 import logging
 
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+    ]
+)
 
 logger = logging.getLogger(__name__)
 
 load_dotenv()
+api_key=os.getenv('DEEPSEEK_API_KEY')
 
-# llm = ChatDeepSeek(
-#     model="deepseek-chat",
-# )
-
-llm = DeepSeekReasonerChatModel(
-    model='deepseek-reasoner',
-    api_key=os.getenv('DEEPSEEK_API_KEY')
+llm = ChatDeepSeek(
+    model="deepseek-chat",
+    api_key=api_key,
 )
 
-if __name__ == '__main__':
+# llm = DeepSeekReasonerChatModel(
+#     model='deepseek-reasoner',
+#     api_key=api_key,
+# )
+
+def create_skill_agent():
     # 1. 加载配置
     config_path = Path('./config.yaml')
     config = load_config(config_path)
@@ -73,7 +83,12 @@ if __name__ == '__main__':
         logger.info("Agent Skill 中间件已经添加!")
 
     # 6. 系统提示词
-    system_prompt = ''
+    system_prompt=(
+        "You are a helpful assistant. "
+        "You have access to two skills: "
+        "write_sql and review_legal_doc. "
+        "Use load_skill to access them."
+    )
 
     # 7. 创建智能体
     agent = create_agent(
@@ -82,6 +97,10 @@ if __name__ == '__main__':
         middleware=middleware_list,
         system_prompt=system_prompt
     )
+    return agent
+
+if __name__ == '__main__':
+    agent = create_skill_agent()
 
     # 8. 接下来处理相关操作
     for step in agent.stream(
