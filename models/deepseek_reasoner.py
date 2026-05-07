@@ -98,7 +98,7 @@ class DeepSeekReasonerChatModel(BaseChatModel):
         }
 
     def _convert_messages_to_openai_format(
-        self, messages: List[BaseMessage]
+            self, messages: List[BaseMessage]
     ) -> List[Dict]:
         """
         将 LangChain 消息转换为 OpenAI 格式
@@ -196,11 +196,11 @@ class DeepSeekReasonerChatModel(BaseChatModel):
         return AIMessage(**ai_message_kwargs)
 
     def _generate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> ChatResult:
         """
         生成响应的核心方法
@@ -234,9 +234,9 @@ class DeepSeekReasonerChatModel(BaseChatModel):
         return ChatResult(generations=[generation])
 
     def bind_tools(
-        self,
-        tools: List[BaseTool],
-        **kwargs: Any
+            self,
+            tools: List[BaseTool],
+            **kwargs: Any
     ) -> "DeepSeekReasonerChatModel":
         """
         绑定工具到模型

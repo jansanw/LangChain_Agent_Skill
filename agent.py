@@ -1,18 +1,15 @@
-import os
 from typing import List
 from pathlib import Path
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import AgentMiddleware
-from dotenv import load_dotenv
-from langchain_deepseek import ChatDeepSeek
+from langgraph.checkpoint.memory import InMemorySaver
 
 from core import SkillRegistry, SkillState, SkillMetadata
 from core.state import SkillStateAccumulative, SkillStateFIFO
 from middleware import SkillMiddleware
 from config import SkillSystemConfig, load_config
-from models import DeepSeekReasonerChatModel
-
+from models.load_models import llm
 
 import logging
 
@@ -27,8 +24,6 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-load_dotenv()
-api_key=os.getenv('DEEPSEEK_API_KEY')
 
 def create_skill_agent():
     # 1. 加载配置
@@ -38,11 +33,6 @@ def create_skill_agent():
     logger.info(config.skills_dir.exists())
 
     logger.info(f"初始化Skill Agent的相关配置: {config.to_dict()}")
-
-    llm = ChatDeepSeek(
-        model=config.default_model,
-        api_key=api_key,
-    )
 
     # 2. 初始化Skill注册类
     registry = SkillRegistry()
@@ -78,7 +68,7 @@ def create_skill_agent():
         logger.info("Agent Skill 中间件已经添加!")
 
     # 6. 系统提示词
-    system_prompt=(
+    system_prompt = (
         "You are a helpful assistant. "
         "You have access to two skills: "
         "write_sql and review_legal_doc. "
@@ -90,18 +80,19 @@ def create_skill_agent():
         model=llm,
         tools=all_tools,
         middleware=middleware_list,
-        system_prompt=system_prompt
+        system_prompt=system_prompt,
+        checkpointer=InMemorySaver()
     )
     return agent
+
 
 if __name__ == '__main__':
     agent = create_skill_agent()
 
     # 8. 接下来处理相关操作
     for step in agent.stream(
-        {
-            # 'messages': '帮我数据分析[10,20,30]这组数据，并调用工具求取中位数和平均数'
-            'messages': '计算[85,92,78,95,88]的统计数据'
-        }, stream_mode='values'):
+            {
+                # 'messages': '帮我数据分析[10,20,30]这组数据，并调用工具求取中位数和平均数'
+                'messages': '计算[85,92,78,95,88]的统计数据'
+            }, stream_mode='values'):
         step['messages'][-1].pretty_print()
-

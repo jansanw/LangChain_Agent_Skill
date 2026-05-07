@@ -251,7 +251,7 @@ async def event_generator(req: QueryRequest, stream_args: dict) -> AsyncGenerato
             if stream_mode == "custom":
                 logger.debug(f"Custom stream data: {data}")
                 res = StreamResponse(
-                    type="tools",
+                    type="tools_custom",
                     event=data.get("func_name", "unknown"),
                     data=data.get("data", {}),
                     agent="tools"
@@ -287,9 +287,9 @@ async def event_generator(req: QueryRequest, stream_args: dict) -> AsyncGenerato
                             content = json.loads(content) if isinstance(content, str) else content
                         except json.JSONDecodeError:
                             pass
-                        res = StreamResponse(type='tools_lite', event=str(func_name), data=content, agent=node)
+                        res = StreamResponse(type='tools', event=str(func_name), data=content, agent=node)
                     else:
-                        res = StreamResponse(type='tools_lite', event=str(func_name), content=str(content), agent=node)
+                        res = StreamResponse(type='tools', event=str(func_name), content=str(content), agent=node)
 
                     if res and req.stream_mode == "MESSAGES" and "not found." not in str(res.content).lower():
                         res_json = res.model_dump_json()
