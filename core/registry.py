@@ -11,6 +11,7 @@ from langchain_core.tools import BaseTool
 
 from .base_skill import BaseSkill, SkillMetadata
 from .exceptions import SkillNotFoundError, SkillLoadError
+from .common_skill import CommonSkill
 
 logger = logging.getLogger(__name__)
 
@@ -188,8 +189,11 @@ class SkillRegistry:
 
         目录结构示例：
         skills_dir/
-            pdf_processing/
-                skill.py       <- 必须定义 create_skill() 函数
+            common/              <- 通用技能目录（Markdown 文件）
+                langgraph-docs.md
+                python-docs.md
+            pdf_processing/      <- 标准技能目录
+                skill.py         <- 必须定义 create_skill() 函数
                 instructions.md
             data_analysis/
                 skill.py
@@ -212,6 +216,13 @@ class SkillRegistry:
             if not skill_path.is_dir():
                 continue
 
+            # 检查是否为 common 目录（通用技能）
+            if skill_path.name == "common":
+                common_count = self._load_common_skills(skill_path)
+                loaded_count += common_count
+                continue
+
+            # 标准技能加载
             skill_file = skill_path / f"{module_name}.py"
             if not skill_file.exists():
                 continue
@@ -225,6 +236,33 @@ class SkillRegistry:
                 continue
 
         logger.info(f"Loaded {loaded_count} skills from {skills_dir}")
+        return loaded_count
+
+    def _load_common_skills(self, common_dir: Path) -> int:
+        """
+        从 common 目录加载通用技能
+
+        Args:
+            common_dir: common 技能目录路径
+
+        Returns:
+            成功加载的 CommonSkill 数量
+        """
+        if not common_dir.exists():
+            return 0
+
+        loaded_count = 0
+
+        for md_file in common_dir.glob("*.md"):
+            try:
+                skill = CommonSkill(md_file)
+                self.register(skill)
+                loaded_count += 1
+            except Exception as e:
+                logger.error(f"Failed to load common skill from {md_file}: {e}")
+                continue
+
+        logger.info(f"Loaded {loaded_count} common skills from {common_dir}")
         return loaded_count
 
     def _load_skill_from_file(
